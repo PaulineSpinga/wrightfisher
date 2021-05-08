@@ -1,0 +1,11 @@
+Package: wrightfisher
+Type: Package
+Title: Whright Fisher
+Version: 0.1.0
+Author: Pauline SPINGA
+Maintainer: The package maintainer <pauline.spinga@orange.fr>
+Description: Set of functions for Wright Fisher modelling
+License: What license is it under?
+Encoding: UTF-8
+dependencies: parallel
+LazyData: true
