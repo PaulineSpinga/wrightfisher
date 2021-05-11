@@ -51,4 +51,17 @@ createData <- function(tirages)
   return(df)
 }
 
+affichDataH <- function(tirages,Nb_rep){
+
+  df <- NULL
+  for(i in 1:Nb_rep)
+  {
+    len <- tirages[[i]]$fixationTime
+    #print(len)
+    temp_df <- data.frame(x=1:len, y=tirages[[i]]$coeffH, col=rep(i, each=len))
+    df <- rbind(df,temp_df)
+  }
+  ggplot(df,aes(x=x,y=y,group=col,colour=factor(col))) + geom_line() # plot data
+
+}
 
