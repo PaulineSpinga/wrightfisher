@@ -60,3 +60,21 @@ createData <- function(tirages)
   }
   return(df)
 }
+
+info_T <- function(vect_temps){
+  esp <- mean(vect_temps)
+  variance <- var(vect_temps)
+
+  return(list(esperance=esp, variance=variance))
+
+}
+
+mclapply.simu <- function(Ne,Na, nbRep){
+  listout <- vector("list", nbRep)
+  for(i in 1:nbRep){
+    listout[[i]] <- popSimu(Ne,Na)
+  }
+  return(listout)
+}
+
+
