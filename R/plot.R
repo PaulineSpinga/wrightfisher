@@ -19,7 +19,8 @@ affichDataA <- function(tirages,Nb_rep){
     temp_df <- data.frame(x=1:len, y=tirages[[i]]$nbA, col=rep(i, each=len))
     df <- rbind(df,temp_df)
   }
-  ggplot(df,aes(x=x,y=y,group=col,colour=factor(col))) + geom_line() # plot data
+  ggplot(df,aes(x=x,y=y,group=col,colour=factor(col))) + geom_line() + labs(title="Number of A over time",x="Time", y = "Number of A") +
+    theme(axis.title=element_text(size=14,face="bold"),plot.title=element_text(size=18,face="bold",hjust=0.5))  # plot data
 
 }
 
@@ -34,7 +35,8 @@ affichDataH <- function(tirages,Nb_rep){
     temp_df <- data.frame(x=1:len, y=tirages[[i]]$coeffH, col=rep(i, each=len))
     df <- rbind(df,temp_df)
   }
-  ggplot(df,aes(x=x,y=y,group=col,colour=factor(col))) + geom_line() # plot data
+  ggplot(df,aes(x=x,y=y,group=col,colour=factor(col))) + geom_line() + labs(title="Value of Heterozysity over Time",x="Time", y = "CoeffH") +
+    theme(axis.title=element_text(size=14,face="bold"),plot.title=element_text(size=18,face="bold",hjust=0.5)) # plot data
 
 }
 
