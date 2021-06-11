@@ -1,3 +1,122 @@
+popSimu <- function(N, nbA = N)
+{
+  N_tot <- 2*N
+  if(N_tot == 0){stop('N_tot equals 0')}
+  if(nbA > N_tot){stop('nbA greater than N_tot')}
+  if(nbA < 0){stop('nbA is negative')}
+  if (!(is.numeric(nbA) && (is.numeric(N_tot)))){stop('one argument is not a numeric')}
+
+  proba_init <- (nbA/(N_tot))
+  p <- proba_init
+  vectA <- nbA
+  h <- (2 * p * (1-p))
+  while((nbA > 0) && (nbA < (2*N)))
+  {
+    pop <- rbinom(n=2*N, size=1, prob=p) #A = 1, a = 0
+    nbA <- sum(pop)
+    p <- nbA/(2*N)
+    vectA <- c(vectA, nbA)
+    h <- c(h, (2 * p * (1-p)))
+  }
+
+  temps <- length(vectA)-1
+
+  return (list(nbA = vectA, fixationTime = temps, coeffH = h, proba_init = proba_init))
+}
+
+
+popSimu.select <- function(N, nbA = N,s) # par défaut nbA = N
+{
+  N_tot <- 2*N
+  if(N_tot == 0){stop('N_tot equals 0')}
+  if(nbA > N_tot){stop('nbA greater than N_tot')}
+  if(nbA < 0){stop('nbA is negative')}
+  if (!(is.numeric(nbA) && (is.numeric(N_tot)))){stop('one argument is not a numeric')}
+
+  proba_init <- (nbA/(N_tot))
+  p <- proba_init
+  vectA <- nbA
+  h <- (2 * p * (1-p))
+  while((nbA > 0) && (nbA < (2*N)))
+  {
+    pop <- rbinom(n=2*N, size=1, prob=p) #A = 1, a = 0
+    nbA <- sum(pop)
+    p <- (1+s)*nbA/((1+s)*nbA + N_tot - nbA)
+    vectA <- c(vectA, nbA)
+    h <- c(h, (2 * p * (1-p)))
+  }
+
+  temps <- length(vectA) - 1
+
+  return (list(nbA = vectA, fixationTime = temps, coeffH = h, proba_init = proba_init))
+}
+
+
+#fonction qui retourne le temps de fixation le plus grand (et donc le nombre max d'allèles A ajoutés)
+#parmi toutes les simulations réalisées pour un jeu de paramètres
+
+maxA <- function(tirages)
+{
+  max_A <- NULL
+  for (i in 1:length(tirages))
+  {
+    max_A <- c(max_A,tirages[[i]]$fixationTime)
+  }
+  return(max(max_A))
+}
+
+##fonction qui retourne le vecteur contenant des temps de fixation pour chaque popSimu réalisée
+vectFix <- function(tirages)
+{
+  vect <- NULL
+  for (i in 1:length(tirages))
+  {
+    vect <- c(vect,tirages[[i]]$fixationTime)
+  }
+  return(vect)
+}
+
+##fonction qui renvoie de vecteur de proba initiales de chaque set de simulation
+
+vectPropa <- function(listSimu){
+  vect <- NULL
+  for (i in 1:length(listSimu)){
+    vect <- c(vect, listSimu[[i]][[1]]$proba_init)
+  }
+  return(vect)
+}
+
+##fonction qui renvoie le temps moyen de chaque set de simu
+
+vectTempsMoy <- function(listSimu){
+  vect <- NULL
+  for (i in 1:length(listSimu)){
+    vect <- c(vect,mean(vectFix(listSimu[[i]])))
+  }
+  return(vect)
+}
+
+
+################################
+createData <- function(tirages)
+{
+  nb_row <- maxA(tirages)
+  nb_tir <- length(tirages)
+
+  df <- data.frame(y=rep(1,nb_row))
+  for(i in 1:nb_tir)
+  {
+    temp_df <- data.frame(y=rep(0,nb_row))
+    row_i <- tirages[[i]]$fixationTime
+    temp_df[1:row_i,] <- tirages[[i]]$nbA
+    df <- cbind(df,temp_df)
+    df[,i] <- temp_df
+  }
+  return(df)
+}
+
+############# ggplot #####################
+
 affichDataA <- function(tirages,Nb_rep){
 
   df <- NULL
@@ -41,6 +160,7 @@ affichDataT <- function(vect_temps,bw){
 
 }
 
+################### temps de fixation en fonction des proba ###################
 
 affichTP <- function (listSimu,ne,step){
 
@@ -49,6 +169,7 @@ affichTP <- function (listSimu,ne,step){
 
   df <- data.frame(proba=vectPropa(listSimu),time=vecteurTemps)
 
+  ## courbe théorique ##
   FT <- -4*ne*(proba*log(proba) + (1-proba)*log(1-proba))
   FT[1] <- 0
   FT[length(FT)] <- 0
@@ -58,10 +179,11 @@ affichTP <- function (listSimu,ne,step){
   FT_vect_proba[length(FT_vect_proba)] <- 0
   df2 <- data.frame(proba= vect_proba, time=FT_vect_proba) #df des proba au 1/100
 
+  ###### cas discret #####
   mat_un <- rep(1,(2*ne)-1)
-  Im <- diag(1, (2*ne)-1)
+  Im <- diag(1, (2*ne)-1) #matrice identité
 
-  p_ij <- NULL
+  p_ij <- NULL #vecteur des probas de passages de i à j
 
   for (i in 1:(2*ne-1)){
     for (j in 1:(2*ne-1)){
@@ -69,12 +191,12 @@ affichTP <- function (listSimu,ne,step){
     }
   }
 
-  mat_pij <- matrix(p_ij,(2*ne)-1,byrow=TRUE)
-  m <- rowSums(solve(Im - mat_pij))
-  m <- c(0,m,0)
+  mat_pij <- matrix(p_ij,(2*ne)-1,byrow=TRUE) #remplir la matrice en ligne
+  m <- rowSums(solve(Im - mat_pij)) #déterminer m
+  m <- c(0,m,0) #compléter avec les valeurs manquantes
 
   proba.m <- (0:(2*ne))/(2*ne)
-  df3 <- data.frame(proba = proba.m, time=m)
+  df3 <- data.frame(proba = proba.m, time=m) #discret
 
   temps.theo.discret <- -4*ne*(proba.m*log(proba.m) + (1-proba.m)*log(1-proba.m))
   temps.theo.discret[1] <- 0
@@ -115,6 +237,7 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
   g <- function(x)
   {return((2*ne/(alpha))*(exp(-2*alpha*x)*expint_Ei(2*alpha*x) - exp(-2*alpha*(x-1))* expint_Ei(2*alpha*(x-1)) + log(1/x-1)))}
 
+  #théorie avec sélection
   colors <- c("sélection"="blue", "sans sélection"="black", "discret"="#16B84E", "théorie"="red", "discret-théorie" = "yellow", "simu-théorie" = "#FF00FF")
   alpha <- s*2*ne
   step <- 0.001
@@ -129,20 +252,27 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
   m_p <- c(0, m_p, 0)
   df.theo <- data.frame(proba=pTheo, temps=m_p)
 
+  #sans sélection
+  #vecteurTemps <- sapply((lapply(listSimu, FUN=vectFix)), FUN=mean)
+  #df <- data.frame(proba=vectPropa(listSimu),time=vecteurTemps)
 
+  #théorie sans sélection
   vect_proba <- seq(0,1, by=0.001)
   FT_vect_proba <- -4*ne*(vect_proba*log(vect_proba) + (1-vect_proba)*log(1-vect_proba))
   FT_vect_proba[1] <- 0
   FT_vect_proba[length(FT_vect_proba)] <- 0
   df.theo.noSelect <- data.frame(proba= vect_proba, time=FT_vect_proba) #df des proba au 1/1000
 
+
+  #avec sélection
   vecteurTempsS <- sapply((lapply(listSimuS, FUN=vectFix)), FUN=mean)
   dfS <- data.frame(probaS=vectPropa(listSimuS),timeS=vecteurTempsS)
 
+  ###### cas discret #####
   mat_un <- rep(1,(2*ne)-1)
-  Im <- diag(1, (2*ne)-1)
+  Im <- diag(1, (2*ne)-1) #matrice identité
 
-  p_ij <- NULL
+  p_ij <- NULL #vecteur des probas de passages de i à j
 
   for (i in 1:(2*ne-1)){
     for (j in 1:(2*ne-1)){
@@ -160,8 +290,9 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
   temps.theo.discret[1] <- 0
   temps.theo.discret[length(temps.theo.discret)] <- 0
   df4 <- data.frame(proba=proba.m, time=temps.theo.discret)
+  ###### fin cas discret #####
 
-
+  ## discret - théorie ##
   m_p2 <-  m_p <- K - C*exp(-2*alpha*proba.m)/(2*alpha) + (2*ne/alpha)*(exp(-2*alpha*proba.m)*expint_Ei(2*alpha*proba.m) - exp(-2*alpha*(proba.m-1))* expint_Ei(2*alpha*(proba.m-1)) + log(1/proba.m-1))
   m_p2[1] <- 0
   m_p2[length(m_p2)] <- 0
@@ -195,4 +326,43 @@ affichVP <- function (listSimu){
     geom_smooth(aes(color="courbe de tendance"), level=0.95,size=0.8)+
     scale_color_manual(name = "Légende", values = colors)
 
+}
+
+###########
+
+mclapply.simu <- function(Ne,Na, nbRep){
+  listout <- vector("list", nbRep)
+  for(i in 1:nbRep){
+    listout[[i]] <- popSimu(Ne,Na)
+  }
+  return(listout)
+}
+
+mclapply.simu.select <- function(Ne,Na, nbRep,s){
+  listout <- vector("list", nbRep)
+  for(i in 1:nbRep){
+    listout[[i]] <- popSimu.select(Ne,Na,s)
+  }
+  return(listout)
+}
+
+##############################################
+simu.simu <- function (Ne, step, Nb_rep){
+  if(step >= 2*Ne){stop('invalid step')}
+  valA <- seq(0,2*Ne, by=step)
+  outF <- vector("list", length(valA))
+  for (i in 1:length(valA)){
+    outF[[i]] <- mclapply(rep(Ne,Nb_rep),popSimu, nbA = valA[i],mc.cores = 1)
+  }
+  return(outF)
+}
+
+simu.simu.select <- function (Ne, step, Nb_rep,s){
+  if(step >= 2*Ne){stop('invalid step')}
+  valA <- seq(0,2*Ne, by=step)
+  outF <- vector("list", length(valA))
+  for (i in 1:length(valA)){
+    outF[[i]] <- mclapply(rep(Ne,Nb_rep),popSimu.select, nbA = valA[i],s=s,mc.cores = 1)
+  }
+  return(outF)
 }
