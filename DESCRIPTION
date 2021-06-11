@@ -7,5 +7,7 @@ Maintainer: The package maintainer <pauline.spinga@orange.fr>
 Description: Set of functions for Wright Fisher modelling
 License: What license is it under?
 Encoding: UTF-8
-dependencies: parallel
+dependencies: parallel, ggplot2, shiny, shinythemes, dplyr, readr,bslib,ggpmisc,expint
 LazyData: true
+
+

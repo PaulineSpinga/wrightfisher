@@ -49,7 +49,6 @@ affichTP <- function (listSimu,ne,step){
 
   df <- data.frame(proba=vectPropa(listSimu),time=vecteurTemps)
 
-  ## courbe théorique ##
   FT <- -4*ne*(proba*log(proba) + (1-proba)*log(1-proba))
   FT[1] <- 0
   FT[length(FT)] <- 0
@@ -59,11 +58,10 @@ affichTP <- function (listSimu,ne,step){
   FT_vect_proba[length(FT_vect_proba)] <- 0
   df2 <- data.frame(proba= vect_proba, time=FT_vect_proba) #df des proba au 1/100
 
-  ###### cas discret #####
   mat_un <- rep(1,(2*ne)-1)
-  Im <- diag(1, (2*ne)-1) #matrice identité
+  Im <- diag(1, (2*ne)-1)
 
-  p_ij <- NULL #vecteur des probas de passages de i à j
+  p_ij <- NULL
 
   for (i in 1:(2*ne-1)){
     for (j in 1:(2*ne-1)){
@@ -71,12 +69,12 @@ affichTP <- function (listSimu,ne,step){
     }
   }
 
-  mat_pij <- matrix(p_ij,(2*ne)-1,byrow=TRUE) #remplir la matrice en ligne
-  m <- rowSums(solve(Im - mat_pij)) #déterminer m
-  m <- c(0,m,0) #compléter avec les valeurs manquantes
+  mat_pij <- matrix(p_ij,(2*ne)-1,byrow=TRUE)
+  m <- rowSums(solve(Im - mat_pij))
+  m <- c(0,m,0)
 
   proba.m <- (0:(2*ne))/(2*ne)
-  df3 <- data.frame(proba = proba.m, time=m) #discret
+  df3 <- data.frame(proba = proba.m, time=m)
 
   temps.theo.discret <- -4*ne*(proba.m*log(proba.m) + (1-proba.m)*log(1-proba.m))
   temps.theo.discret[1] <- 0

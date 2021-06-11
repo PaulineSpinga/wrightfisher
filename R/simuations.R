@@ -25,7 +25,7 @@ popSimu <- function(N, nbA = N)
 }
 
 
-popSimu.select <- function(N, nbA = N,s) # par défaut nbA = N
+popSimu.select <- function(N, nbA = N,s)
 {
   N_tot <- 2*N
   if(N_tot == 0){stop('N_tot equals 0')}
