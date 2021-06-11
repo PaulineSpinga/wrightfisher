@@ -149,7 +149,6 @@ affichDataH <- function(tirages,Nb_rep){
 affichDataT <- function(vect_temps,bw){
   colors <- c("mean" = "blue", "variance" = "red")
   texte <- c(paste("Mean = ",round(mean(vect_temps),2)), paste("Variance = ", round(var(vect_temps),2)))
-  print(paste("Variance = ", round(var(vect_temps),2)))
   df <- as.data.frame(vect_temps)
   ggplot(df,aes(x=vect_temps)) + geom_histogram(color="blue",fill="lightblue",binwidth=bw)+
     geom_vline(aes(xintercept=mean(vect_temps),color="mean"), linetype="dashed", size=1)+
