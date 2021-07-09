@@ -247,16 +247,16 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
   K <- C*f(1) -g(1- 10^-10)
 
   m_p <- K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha)*(exp(-2*alpha*pTheo)*expint_Ei(2*alpha*pTheo) - exp(-2*alpha*(pTheo-1))* expint_Ei(2*alpha*(pTheo-1)) + log(1/pTheo-1))
-  m_pApprox <-  K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha) * (exp(-2*alpha*pTheo)* (1-exp(2*alpha)) * (gamma - integrale2(0.01, 2*alpha*(pTheo-1),k)) - exp(-2*alpha*pTheo) * integrale2(2*alpha*pTheo,2*alpha*(pTheo-1), k))
+  #m_pApprox <-  K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha) * (exp(-2*alpha*pTheo)* (1-exp(2*alpha)) * (gamma - integrale2(0.01, 2*alpha*(pTheo-1),k)) - exp(-2*alpha*pTheo) * integrale2(2*alpha*pTheo,2*alpha*(pTheo-1), k))
   #m_pApprox <-  K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha) * (-exp(-2*alpha*pTheo)* integrale2(0.01, 2*alpha*pTheo,k)- exp(2*alpha*(1-pTheo)) * integraleNeg(0.01, 2*alpha*(1-pTheo),k) + gamma * exp(-2*alpha*pTheo)* (1-exp(2*alpha)))
   #m_pApprox <- K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha)*(- exp(-2*alpha*p) * integrale2(0.01, 2*alpha*p, k) + exp(-2*alpha*p)*gamma + log(2*alpha))
 
   pTheo <- c(0, pTheo, 1)
   m_p <- c(0, m_p, 0)
 
-  m_pApprox <- c(0,m_pApprox,0)
+  #m_pApprox <- c(0,m_pApprox,0)
   df.theo <- data.frame(proba=pTheo, temps=m_p)
-  df.theoApprox <- data.frame(proba=pTheo, temps=m_pApprox)
+  #df.theoApprox <- data.frame(proba=pTheo, temps=m_pApprox)
 
   #sans sélection
   #vecteurTemps <- sapply((lapply(listSimu, FUN=vectFix)), FUN=mean)
