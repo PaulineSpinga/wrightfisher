@@ -207,7 +207,7 @@ affichTP <- function (listSimu,ne,step){
   ggplot(df,aes(x=proba,y=time,color="simulation")) + geom_point() +
     labs(title="Fixation time in terms of inital probability",x="p", y = "Fixation time")+
     theme(axis.title=element_text(size=14,face="bold"),plot.title=element_text(size=18,face="bold",hjust=0.5)) +
-    geom_smooth(linetype="blank", level=0.95,size=0.8) +
+    geom_smooth(linetype="blank", level=0.95,size=0.8,method = 'loess', formula= y ~ x) +
     geom_line(data=df2,aes(x=proba, y=FT_vect_proba,color="théorie"), size=1.2,) +
     geom_line(aes(x=proba, y=(time-FT),color="simu-theo"), size=1.2) +
     geom_point(data=df3, aes(x=proba,y=time, color="discret"), size=1.2) +
@@ -224,7 +224,7 @@ affichTP.select <- function (listSimu){
   ggplot(df,aes(x=proba,y=time)) + geom_point(color="blue", size=1)  +
     labs(title="Fixation time in terms of inital probability",x="p", y = "Fixation time")+
     theme(axis.title=element_text(size=14,face="bold"),plot.title=element_text(size=18,face="bold",hjust=0.5)) +
-    geom_smooth(linetype="blank", level=0.95,size=0.8) +
+    geom_smooth(linetype="blank", level=0.95,size=0.8,method = 'loess', formula= y ~ x) +
     geom_line(aes(x=proba, y=time),color="blue")
 }
 
@@ -237,19 +237,26 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
   {return((2*ne/(alpha))*(exp(-2*alpha*x)*expint_Ei(2*alpha*x) - exp(-2*alpha*(x-1))* expint_Ei(2*alpha*(x-1)) + log(1/x-1)))}
 
   #théorie avec sélection
-  colors <- c("sélection"="blue", "sans sélection"="black", "discret"="#16B84E", "théorie"="red", "discret-théorie" = "yellow", "simu-théorie" = "#FF00FF")
+  colors <- c("sélection"="blue", "sans sélection"="black", "discret"="#16B84E", "théorie"="red", "discret-théorie" = "yellow", "simu-théorie" = "#FF00FF", "théorie 2" = "purple")
   alpha <- s*2*ne
   step <- 0.001
   pTheo <- seq(step,1-step,by =step)
   gamma <- 0.577215664901532
+  k <-2
   C <- (g(1-10^-10)- g(10^-10))/(f(1)-f(0))
   K <- C*f(1) -g(1- 10^-10)
 
   m_p <- K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha)*(exp(-2*alpha*pTheo)*expint_Ei(2*alpha*pTheo) - exp(-2*alpha*(pTheo-1))* expint_Ei(2*alpha*(pTheo-1)) + log(1/pTheo-1))
+  m_pApprox <-  K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha) * (exp(-2*alpha*pTheo)* (1-exp(2*alpha)) * (gamma - integrale2(0.01, 2*alpha*(pTheo-1),k)) - exp(-2*alpha*pTheo) * integrale2(2*alpha*pTheo,2*alpha*(pTheo-1), k))
+  #m_pApprox <-  K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha) * (-exp(-2*alpha*pTheo)* integrale2(0.01, 2*alpha*pTheo,k)- exp(2*alpha*(1-pTheo)) * integraleNeg(0.01, 2*alpha*(1-pTheo),k) + gamma * exp(-2*alpha*pTheo)* (1-exp(2*alpha)))
+  #m_pApprox <- K - C*exp(-2*alpha*pTheo)/(2*alpha) + (2*ne/alpha)*(- exp(-2*alpha*p) * integrale2(0.01, 2*alpha*p, k) + exp(-2*alpha*p)*gamma + log(2*alpha))
 
   pTheo <- c(0, pTheo, 1)
   m_p <- c(0, m_p, 0)
+
+  m_pApprox <- c(0,m_pApprox,0)
   df.theo <- data.frame(proba=pTheo, temps=m_p)
+  df.theoApprox <- data.frame(proba=pTheo, temps=m_pApprox)
 
   #sans sélection
   #vecteurTemps <- sapply((lapply(listSimu, FUN=vectFix)), FUN=mean)
@@ -292,17 +299,17 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
   ###### fin cas discret #####
 
   ## discret - théorie ##
-  m_p2 <-  m_p <- K - C*exp(-2*alpha*proba.m)/(2*alpha) + (2*ne/alpha)*(exp(-2*alpha*proba.m)*expint_Ei(2*alpha*proba.m) - exp(-2*alpha*(proba.m-1))* expint_Ei(2*alpha*(proba.m-1)) + log(1/proba.m-1))
-  m_p2[1] <- 0
-  m_p2[length(m_p2)] <- 0
+  proba.m <- proba.m[2:(length(proba.m)-1)]
+  m_p2 <-  K - C*exp(-2*alpha*proba.m)/(2*alpha) + (2*ne/alpha)*(exp(-2*alpha*proba.m)*expint_Ei(2*alpha*proba.m) - exp(-2*alpha*(proba.m-1))* expint_Ei(2*alpha*(proba.m-1)) + log(1/proba.m-1))
+  proba.m <- c(0,proba.m,1)
+  m_p2 <- c(0,m_p2,0)
   df.discret.theo <- data.frame(proba=proba.m, time= m-m_p2 )
 
   ## simulation - théorie ##
-  temps.simu.theo <- m_p <- K - C*exp(-2*alpha*vectPropa(listSimuS))/(2*alpha) + (2*ne/alpha)*(exp(-2*alpha*vectPropa(listSimuS))*expint_Ei(2*alpha*vectPropa(listSimuS)) - exp(-2*alpha*(vectPropa(listSimuS)-1))* expint_Ei(2*alpha*(vectPropa(listSimuS)-1)) + log(1/vectPropa(listSimuS)-1))
-  temps.simu.theo[1] <- 0
-  temps.simu.theo[length(temps.simu.theo)] <- 0
+  vectProbaListSimuS <- vectPropa(listSimuS)[2:(length(vectPropa(listSimuS))-1)]
+  temps.simu.theo <- K - C*exp(-2*alpha*vectProbaListSimuS)/(2*alpha) + (2*ne/alpha)*(exp(-2*alpha*vectProbaListSimuS)*expint_Ei(2*alpha*vectProbaListSimuS) - exp(-2*alpha*(vectProbaListSimuS-1))* expint_Ei(2*alpha*(vectProbaListSimuS-1)) + log(1/vectProbaListSimuS-1))
+  temps.simu.theo <- c(0,temps.simu.theo,0)
   df.simu.theo <- data.frame(proba=vectPropa(listSimuS), time= vecteurTempsS - temps.simu.theo)
-
 
   ggplot(dfS,aes(x=probaS, y=timeS,color="sélection")) +  geom_point() +
     labs(title="Fixation time in terms of inital probability",x="p", y = "Fixation time")+
@@ -310,6 +317,7 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
     geom_line(data=df.theo.noSelect, aes(x=proba, y=time, colour="sans sélection"),linetype="dotted",size=1.2) +
     geom_point(data=df3, aes(x=proba,y=time, color="discret"), size=1.4) +
     geom_line(data=df.theo, aes(x=proba, y=temps, color="théorie")) +
+    #geom_line(data=df.theoApprox, aes(x=proba, y=temps, color="théorie 2")) +
     geom_line(data= df.discret.theo, aes(x=proba, y=time, color="discret-théorie")) +
     geom_line(data= df.simu.theo, aes(x=proba, y=time, color="simu-théorie")) +
     scale_color_manual(name = "Légende", values = colors)
@@ -322,7 +330,7 @@ affichVP <- function (listSimu){
   df <- data.frame(proba=vectPropa(listSimu),time=vecteurTemps)
   ggplot(df,aes(x=proba,y=time,color="variance")) + geom_line()  + labs(title=" Variance in terms of inital probability",x="p", y = "Variance")+
     theme(axis.title=element_text(size=14,face="bold"),plot.title=element_text(size=18,face="bold",hjust=0.5)) +
-    geom_smooth(aes(color="courbe de tendance"), level=0.95,size=0.8)+
+    geom_smooth(aes(color="courbe de tendance"), level=0.95,size=0.8,method = 'loess', formula= y ~ x)+
     scale_color_manual(name = "Légende", values = colors)
 
 }
