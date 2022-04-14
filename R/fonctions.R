@@ -1,3 +1,5 @@
+#simulation du temps de fixation pour une population
+#on tire une nouvelle génération tant p différent de 0 et 1
 popSimu <- function(N, nbA = N)
 {
   N_tot <- 2*N
@@ -25,6 +27,7 @@ popSimu <- function(N, nbA = N)
 }
 
 
+#pareil que popSimu mais avec ajout de l'effet de sélection
 popSimu.select <- function(N, nbA = N,s) # par défaut nbA = N
 {
   N_tot <- 2*N
@@ -53,8 +56,7 @@ popSimu.select <- function(N, nbA = N,s) # par défaut nbA = N
 
 
 #fonction qui retourne le temps de fixation le plus grand (et donc le nombre max d'allèles A ajoutés)
-#parmi toutes les simulations réalisées pour un jeu de paramètres
-
+#parmi toutes les simulations réalisées pour un jeu de paramètres (taille pop et nombre d'allèles A initiaux)
 maxA <- function(tirages)
 {
   max_A <- NULL
@@ -77,7 +79,7 @@ vectFix <- function(tirages)
 }
 
 ##fonction qui renvoie de vecteur de proba initiales de chaque set de simulation
-
+## 1 set de simulation : plusieurs popSimu (ou popSimu.select) réalisées pour plusieurs proba initiales différentes
 vectPropa <- function(listSimu){
   vect <- NULL
   for (i in 1:length(listSimu)){
@@ -96,8 +98,9 @@ vectTempsMoy <- function(listSimu){
   return(vect)
 }
 
-
 ################################
+
+#fonction non utilisée
 createData <- function(tirages)
 {
   nb_row <- maxA(tirages)
@@ -117,6 +120,7 @@ createData <- function(tirages)
 
 ############# ggplot #####################
 
+#nombre d'allèles A en fonction du temps (pour popSimu et popSimu.select)
 affichDataA <- function(tirages,Nb_rep){
 
   df <- NULL
@@ -131,7 +135,7 @@ affichDataA <- function(tirages,Nb_rep){
 
 }
 
-
+#coefficient d'hétérozygotie en fonction du temps (pour popSimu et popSimu.select)
 affichDataH <- function(tirages,Nb_rep){
 
   df <- NULL
@@ -146,6 +150,7 @@ affichDataH <- function(tirages,Nb_rep){
 
 }
 
+#histogramme du temps de fixation (pour popSimu et popSimu.select)
 affichDataT <- function(vect_temps,bw){
   colors <- c("mean" = "blue", "variance" = "red")
   texte <- c(paste("Mean = ",round(mean(vect_temps),2)), paste("Variance = ", round(var(vect_temps),2)))
@@ -155,12 +160,14 @@ affichDataT <- function(vect_temps,bw){
     geom_vline(aes(xintercept=var(vect_temps),color="variance"), linetype="dashed", size=1)+
     labs(title="Fixation time histogram plot",x="Fixation time", y = "Count")+
     theme(axis.title=element_text(size=14,face="bold"),plot.title=element_text(size=18,face="bold",hjust=0.5) )+
-    scale_color_manual(name = "Légende", labels=texte, values = colors)
-
+    scale_color_manual(name = "Légende", labels=texte, values = colors)+
+    coord_cartesian(xlim = c(min(vect_temps), max(vect_temps)))
 }
 
-################### temps de fixation en fonction des proba ###################
+################### temps de fixation en fonction des probas initiales ###################
 
+## pour simu.simu  (plusieurs simulations de popSimu)
+#temps de fixation sans sélection + cas discret + différences
 affichTP <- function (listSimu,ne,step){
 
   vecteurTemps <- sapply((lapply(listSimu, vectFix)), mean) #pour chaque mclapply, moyenner les Temps de fixation obtenus
@@ -215,8 +222,8 @@ affichTP <- function (listSimu,ne,step){
     scale_color_manual(name = "Légende", values = colors)
 }
 
-
-
+## pour simu.simu.select (plusieurs simulations de popSimu.select)
+## non utilisé car on utilise affichTP.both
 affichTP.select <- function (listSimu){
   vecteurTemps <- sapply((lapply(listSimu, vectFix)), mean) #pour chaque mclapply, moyenner les Temps de fixation obtenus
   df <- data.frame(proba=vectPropa(listSimu),time=vecteurTemps)
@@ -228,6 +235,8 @@ affichTP.select <- function (listSimu){
     geom_line(aes(x=proba, y=time),color="blue")
 }
 
+## pour simu.simu.select (plusieurs simulations de popSimu.select)
+##temps de fixation avec et sans sélection + cas discret + différences
 affichTP.both <- function (listSimu,listSimuS,ne,s){
 
   f <- function(x)
@@ -314,16 +323,18 @@ affichTP.both <- function (listSimu,listSimuS,ne,s){
   ggplot(dfS,aes(x=probaS, y=timeS,color="sélection")) +  geom_point() +
     labs(title="Fixation time in terms of inital probability",x="p", y = "Fixation time")+
     theme(axis.title=element_text(size=14,face="bold"),plot.title=element_text(size=18,face="bold",hjust=0.5)) +
-    geom_line(data=df.theo.noSelect, aes(x=proba, y=time, colour="sans sélection"),linetype="dotted",size=1.2) +
+    geom_line(data=df.theo.noSelect, aes(x=proba, y=time, colour="sans sélection"),size=1) +
     geom_point(data=df3, aes(x=proba,y=time, color="discret"), size=1.4) +
     geom_line(data=df.theo, aes(x=proba, y=temps, color="théorie")) +
     #geom_line(data=df.theoApprox, aes(x=proba, y=temps, color="théorie 2")) +
     geom_line(data= df.discret.theo, aes(x=proba, y=time, color="discret-théorie")) +
     geom_line(data= df.simu.theo, aes(x=proba, y=time, color="simu-théorie")) +
     scale_color_manual(name = "Légende", values = colors)
+
+  #ggplot(df.theoApprox, aes(x=proba, y=temps)) + geom_line()
 }
 
-
+##variance du temps de fixation
 affichVP <- function (listSimu){
   colors <- c("variance"="blue", "courbe de tendance"="#FFFF6B")
   vecteurTemps <- sapply((lapply(listSimu, vectFix)), var) #pour chaque mclapply, retourner la variance les Temps de fixation obtenus
@@ -336,6 +347,9 @@ affichVP <- function (listSimu){
 }
 
 ###########
+
+## c'est comme la fonction mclapply() de R mais faite à la main
+## on ne s'en sert pas
 
 mclapply.simu <- function(Ne,Na, nbRep){
   listout <- vector("list", nbRep)
@@ -354,6 +368,8 @@ mclapply.simu.select <- function(Ne,Na, nbRep,s){
 }
 
 ##############################################
+## plusieurs popSimu avec et sans sélection pour toutes les proba initiales calculées en fonction de 2*Ne et step
+
 simu.simu <- function (Ne, step, Nb_rep){
   if(step >= 2*Ne){stop('invalid step')}
   valA <- seq(0,2*Ne, by=step)
@@ -367,6 +383,10 @@ simu.simu <- function (Ne, step, Nb_rep){
 simu.simu.select <- function (Ne, step, Nb_rep,s){
   if(step >= 2*Ne){stop('invalid step')}
   valA <- seq(0,2*Ne, by=step)
+  if(Ne%%step != 0){
+    valA <- c(valA,2*Ne)
+  }
+  print(valA)
   outF <- vector("list", length(valA))
   for (i in 1:length(valA)){
     outF[[i]] <- mclapply(rep(Ne,Nb_rep),popSimu.select, nbA = valA[i],s=s,mc.cores = 1)
